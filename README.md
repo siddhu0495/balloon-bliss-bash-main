@@ -28,7 +28,7 @@ This project is built with:
 
 Yes, you can!
 
-You can view the high scores once the game is over.
+You can view the scores for each game mode like 'Classic', 'Time Attack' and 'Endless' and also, for all the games together.
 
 ## Can I login and store my data?
 
@@ -57,3 +57,7 @@ You can report a bug by opening an issue on the GitHub repository.
 Yes, you can!
 
 Go ahead and suggest a feature by opening an issue on the GitHub repository.
+
+## More features are on the way!
+
+More features are on the way! Stay tuned for more updates.
