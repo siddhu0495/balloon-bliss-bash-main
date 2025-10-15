@@ -6,6 +6,8 @@ import { GameModeSelector, GameMode } from "./GameModeSelector";
 import { PowerUp } from "./PowerUp";
 import { ParticleEffect } from "./ParticleEffect";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
+import { getGameSettings } from "@/pages/Settings";
+import { saveScore } from "@/pages/Scores";
 import { toast } from "sonner";
 
 interface BalloonData {
@@ -31,13 +33,40 @@ interface ParticleData {
 }
 
 const BALLOON_COLORS = ["red", "blue", "green", "yellow", "purple", "orange", "pink", "cyan"];
-const INITIAL_LIVES = 5;
-const SPAWN_INTERVAL = 1500;
-const MIN_SPEED = 4;
-const MAX_SPEED = 7;
-const TIME_ATTACK_DURATION = 60; // seconds
+
+const getDifficultySettings = (difficulty: string) => {
+  switch (difficulty) {
+    case "easy":
+      return {
+        initialLives: 7,
+        spawnInterval: 2000,
+        minSpeed: 3,
+        maxSpeed: 5,
+        timeAttackDuration: 90,
+      };
+    case "hard":
+      return {
+        initialLives: 3,
+        spawnInterval: 1000,
+        minSpeed: 5,
+        maxSpeed: 9,
+        timeAttackDuration: 45,
+      };
+    default: // medium
+      return {
+        initialLives: 5,
+        spawnInterval: 1500,
+        minSpeed: 4,
+        maxSpeed: 7,
+        timeAttackDuration: 60,
+      };
+  }
+};
 
 export const BalloonGame = () => {
+  const settings = getGameSettings();
+  const difficultySettings = getDifficultySettings(settings.difficulty);
+  
   const [gameMode, setGameMode] = useState<GameMode | null>(null);
   const [balloons, setBalloons] = useState<BalloonData[]>([]);
   const [powerUps, setPowerUps] = useState<PowerUpData[]>([]);
@@ -46,19 +75,19 @@ export const BalloonGame = () => {
   const [highScore, setHighScore] = useState(() => {
     return parseInt(localStorage.getItem("balloonHighScore") || "0");
   });
-  const [lives, setLives] = useState(INITIAL_LIVES);
+  const [lives, setLives] = useState(difficultySettings.initialLives);
   const [gameOver, setGameOver] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
-  const [spawnInterval, setSpawnInterval] = useState(SPAWN_INTERVAL);
-  const [timeLeft, setTimeLeft] = useState(TIME_ATTACK_DURATION);
+  const [spawnInterval, setSpawnInterval] = useState(difficultySettings.spawnInterval);
+  const [timeLeft, setTimeLeft] = useState(difficultySettings.timeAttackDuration);
   const [activePowerUps, setActivePowerUps] = useState<Record<string, boolean>>({});
   const { playPop, playPowerUp, playGameOver } = useSoundEffects();
 
   const createBalloon = useCallback((): BalloonData => {
     const color = BALLOON_COLORS[Math.floor(Math.random() * BALLOON_COLORS.length)];
     const speed = activePowerUps.slowmo 
-      ? (MIN_SPEED + Math.random() * (MAX_SPEED - MIN_SPEED)) * 1.5 
-      : MIN_SPEED + Math.random() * (MAX_SPEED - MIN_SPEED);
+      ? (difficultySettings.minSpeed + Math.random() * (difficultySettings.maxSpeed - difficultySettings.minSpeed)) * 1.5 
+      : difficultySettings.minSpeed + Math.random() * (difficultySettings.maxSpeed - difficultySettings.minSpeed);
     const xPosition = 5 + Math.random() * 85;
     
     const random = Math.random();
@@ -73,12 +102,12 @@ export const BalloonGame = () => {
       speed,
       xPosition,
     };
-  }, [activePowerUps.slowmo]);
+  }, [activePowerUps.slowmo, difficultySettings]);
 
   const createPowerUp = useCallback((): PowerUpData => {
     const types: PowerUpData["type"][] = ["slowmo", "extralife", "doublescore", "multipop"];
     const type = types[Math.floor(Math.random() * types.length)];
-    const speed = MIN_SPEED + Math.random() * (MAX_SPEED - MIN_SPEED);
+    const speed = difficultySettings.minSpeed + Math.random() * (difficultySettings.maxSpeed - difficultySettings.minSpeed);
     const xPosition = 5 + Math.random() * 85;
     
     return {
@@ -87,11 +116,11 @@ export const BalloonGame = () => {
       speed,
       xPosition,
     };
-  }, []);
+  }, [difficultySettings]);
 
   const handlePop = useCallback((id: string, points: number = 10) => {
     const balloon = balloons.find(b => b.id === id);
-    if (balloon) {
+    if (balloon && settings.particlesEnabled) {
       const element = document.getElementById(id);
       if (element) {
         const rect = element.getBoundingClientRect();
@@ -112,7 +141,7 @@ export const BalloonGame = () => {
     if (score > 0 && score % 50 === 0) {
       setSpawnInterval((prev) => Math.max(800, prev - 100));
     }
-  }, [score, balloons, activePowerUps.doublescore, playPop]);
+  }, [score, balloons, activePowerUps.doublescore, playPop, settings.particlesEnabled]);
 
   const handleMiss = useCallback((id: string) => {
     setBalloons((prev) => prev.filter((b) => b.id !== id));
@@ -122,6 +151,7 @@ export const BalloonGame = () => {
         if (newLives <= 0) {
           setGameOver(true);
           playGameOver();
+          saveScore(settings.displayName, score, gameMode);
           if (score > highScore) {
             setHighScore(score);
             localStorage.setItem("balloonHighScore", score.toString());
@@ -133,7 +163,7 @@ export const BalloonGame = () => {
         return newLives;
       });
     }
-  }, [gameMode, score, highScore, playGameOver]);
+  }, [gameMode, score, highScore, playGameOver, settings.displayName]);
 
   const handlePowerUpCollect = useCallback((id: string, type: string) => {
     setPowerUps((prev) => prev.filter((p) => p.id !== id));
@@ -167,26 +197,29 @@ export const BalloonGame = () => {
   }, []);
 
   const handleRestart = useCallback(() => {
+    const newSettings = getGameSettings();
+    const newDifficultySettings = getDifficultySettings(newSettings.difficulty);
+    
     setBalloons([]);
     setPowerUps([]);
     setParticles([]);
     setScore(0);
-    setLives(gameMode === "endless" ? 999 : INITIAL_LIVES);
+    setLives(gameMode === "endless" ? 999 : newDifficultySettings.initialLives);
     setGameOver(false);
     setGameMode(null);
-    setSpawnInterval(SPAWN_INTERVAL);
-    setTimeLeft(TIME_ATTACK_DURATION);
+    setSpawnInterval(newDifficultySettings.spawnInterval);
+    setTimeLeft(newDifficultySettings.timeAttackDuration);
     setActivePowerUps({});
     toast.success("New Game Started!");
   }, [gameMode]);
 
   const handleModeSelect = useCallback((mode: GameMode) => {
     setGameMode(mode);
-    setLives(mode === "endless" ? 999 : INITIAL_LIVES);
+    setLives(mode === "endless" ? 999 : difficultySettings.initialLives);
     if (mode === "timeattack") {
-      setTimeLeft(TIME_ATTACK_DURATION);
+      setTimeLeft(difficultySettings.timeAttackDuration);
     }
-  }, []);
+  }, [difficultySettings]);
 
   // Spawn balloons
   useEffect(() => {
@@ -221,6 +254,7 @@ export const BalloonGame = () => {
         if (prev <= 1) {
           setGameOver(true);
           playGameOver();
+          saveScore(settings.displayName, score, gameMode);
           if (score > highScore) {
             setHighScore(score);
             localStorage.setItem("balloonHighScore", score.toString());
@@ -235,7 +269,7 @@ export const BalloonGame = () => {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [gameMode, gameOver, isPaused, score, highScore, playGameOver]);
+  }, [gameMode, gameOver, isPaused, score, highScore, playGameOver, settings.displayName]);
 
   // Keyboard controls
   useEffect(() => {
@@ -259,7 +293,7 @@ export const BalloonGame = () => {
         score={score} 
         highScore={highScore}
         lives={lives} 
-        maxLives={INITIAL_LIVES} 
+        maxLives={difficultySettings.initialLives} 
         isPaused={isPaused}
         gameMode={gameMode}
         timeLeft={gameMode === "timeattack" ? timeLeft : undefined}
