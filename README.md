@@ -28,4 +28,4 @@ This project is built with:
 
 Yes, you can!
 
-Currently, this is In-Progress of development and you can view the high scores once it's available.
+You can view the high scores once the game is over.
