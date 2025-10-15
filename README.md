@@ -2,7 +2,7 @@
 
 ## Project info
 
-**URL**: https://balloon-bliss-bash-main.vercel.app/
+**URL**: https://balloonbash.vercel.app/
 
 ## How can I play this game?
 
