@@ -101,7 +101,7 @@ export const Terms = () => {
               <p className="text-muted-foreground">
                 For questions about these Terms & Conditions, contact us at:
                 <br />
-                Email: legal@balloonblissbash.com
+                Email: legal@github.com
               </p>
             </section>
           </div>

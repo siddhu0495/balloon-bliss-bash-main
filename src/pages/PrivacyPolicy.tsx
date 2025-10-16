@@ -103,7 +103,7 @@ export const PrivacyPolicy = () => {
               <p className="text-muted-foreground">
                 If you have any questions about this Privacy Policy, please contact us at:
                 <br />
-                Email: support@balloonblissbash.com
+                Email: support@github.com
               </p>
             </section>
           </div>

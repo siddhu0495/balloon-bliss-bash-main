@@ -104,7 +104,7 @@ export const About = () => {
             <section className="bg-primary/10 rounded-2xl p-6 text-center">
               <h2 className="text-xl font-bold text-foreground mb-3">Need Help?</h2>
               <p className="text-muted-foreground mb-4">
-                Contact us at: support@balloonblissbash.com
+                Contact us at: support@github.com
               </p>
               <div className="flex justify-center gap-4">
                 <Button onClick={() => navigate("/guide")} variant="secondary">

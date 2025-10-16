@@ -255,14 +255,13 @@ export const BalloonGame = () => {
     const interval = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
+          clearInterval(interval);
           setGameOver(true);
           playGameOver();
-          const currentScore = score;
-          const currentHighScore = highScore;
-          saveScore(settings.displayName, currentScore, gameMode || "classic");
-          if (currentScore > currentHighScore) {
-            setHighScore(currentScore);
-            localStorage.setItem("balloonHighScore", currentScore.toString());
+          saveScore(settings.displayName, score, gameMode || "classic");
+          if (score > highScore) {
+            setHighScore(score);
+            localStorage.setItem("balloonHighScore", score.toString());
             toast.success("New High Score!");
           } else {
             toast.info("Time's Up!");
@@ -274,7 +273,7 @@ export const BalloonGame = () => {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [gameMode, gameOver, isPaused, playGameOver, settings.displayName]);
+  }, [gameMode, gameOver, isPaused, score, highScore, playGameOver, settings.displayName]);
 
   // Keyboard controls
   useEffect(() => {
