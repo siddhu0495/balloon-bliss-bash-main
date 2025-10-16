@@ -14,15 +14,11 @@ interface BalloonProps {
 export const Balloon = ({ id, color, type = "normal", onPop, onMiss, speed, xPosition }: BalloonProps) => {
   const [isPopped, setIsPopped] = useState(false);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (!isPopped) {
-        onMiss(id);
-      }
-    }, speed * 1000);
-
-    return () => clearTimeout(timer);
-  }, [id, onMiss, speed, isPopped]);
+  const handleAnimationEnd = () => {
+    if (!isPopped) {
+      onMiss(id);
+    }
+  };
 
   const handleClick = () => {
     if (!isPopped) {
@@ -53,6 +49,7 @@ export const Balloon = ({ id, color, type = "normal", onPop, onMiss, speed, xPos
 
   return (
     <div
+      id={id}
       className="absolute cursor-pointer animate-float-up"
       style={{
         left: `${xPosition}%`,
@@ -60,6 +57,7 @@ export const Balloon = ({ id, color, type = "normal", onPop, onMiss, speed, xPos
         animationDuration: `${speed}s`,
       }}
       onClick={handleClick}
+      onAnimationEnd={handleAnimationEnd}
     >
       <div className="relative">
         {/* Balloon body */}
