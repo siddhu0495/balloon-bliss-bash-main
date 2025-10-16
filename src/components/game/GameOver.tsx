@@ -1,14 +1,33 @@
 import { Button } from "@/components/ui/button";
-import { Trophy, RotateCcw } from "lucide-react";
+import { Trophy, RotateCcw, Heart } from "lucide-react";
+import { useAdMob } from "@/hooks/useAdMob";
+import { toast } from "sonner";
+import { useState } from "react";
 
 interface GameOverProps {
   score: number;
   highScore: number;
   onRestart: () => void;
+  onExtraLife?: () => void;
 }
 
-export const GameOver = ({ score, highScore, onRestart }: GameOverProps) => {
+export const GameOver = ({ score, highScore, onRestart, onExtraLife }: GameOverProps) => {
   const isNewHighScore = score > highScore && highScore > 0;
+  const { showRewardAd, isNative } = useAdMob();
+  const [isWatchingAd, setIsWatchingAd] = useState(false);
+
+  const handleWatchAd = async () => {
+    setIsWatchingAd(true);
+    const rewarded = await showRewardAd();
+    setIsWatchingAd(false);
+    
+    if (rewarded) {
+      toast.success("Extra life granted!");
+      onExtraLife?.();
+    } else {
+      toast.error("Ad not completed");
+    }
+  };
   
   return (
     <div className="absolute inset-0 flex items-center justify-center z-20 bg-black/40 backdrop-blur-md animate-slide-up">
@@ -35,14 +54,29 @@ export const GameOver = ({ score, highScore, onRestart }: GameOverProps) => {
           )}
         </div>
 
-        <Button
-          onClick={onRestart}
-          size="lg"
-          className="w-full text-lg font-semibold shadow-lg hover:shadow-xl transition-all"
-        >
-          <RotateCcw className="w-5 h-5 mr-2" />
-          Play Again
-        </Button>
+        <div className="space-y-3 w-full">
+          {isNative && onExtraLife && (
+            <Button
+              onClick={handleWatchAd}
+              size="lg"
+              variant="secondary"
+              className="w-full text-lg font-semibold shadow-lg hover:shadow-xl transition-all"
+              disabled={isWatchingAd}
+            >
+              <Heart className="w-5 h-5 mr-2" />
+              {isWatchingAd ? "Loading Ad..." : "Watch Ad for Extra Life"}
+            </Button>
+          )}
+          
+          <Button
+            onClick={onRestart}
+            size="lg"
+            className="w-full text-lg font-semibold shadow-lg hover:shadow-xl transition-all"
+          >
+            <RotateCcw className="w-5 h-5 mr-2" />
+            Play Again
+          </Button>
+        </div>
       </div>
     </div>
   );
