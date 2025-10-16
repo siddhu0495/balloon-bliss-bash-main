@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Trophy, Clock, Infinity, Settings, BarChart3 } from "lucide-react";
+import { Trophy, Clock, Infinity, Settings, BarChart3, Info, BookOpen } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export type GameMode = "classic" | "timeattack" | "endless";
@@ -64,6 +64,39 @@ export const GameModeSelector = ({ onSelectMode }: GameModeSelectorProps) => {
             <Settings className="w-4 h-4 mr-2" />
             Settings
           </Button>
+          <Button
+            onClick={() => navigate("/about")}
+            variant="outline"
+            className="w-full"
+          >
+            <Info className="w-4 h-4 mr-2" />
+            About
+          </Button>
+          <Button
+            onClick={() => navigate("/guide")}
+            variant="outline"
+            className="w-full"
+          >
+            <BookOpen className="w-4 h-4 mr-2" />
+            Guide
+          </Button>
+        </div>
+
+        {/* Legal links */}
+        <div className="flex gap-4 justify-center text-sm mt-4">
+          <button
+            onClick={() => navigate("/privacy")}
+            className="text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Privacy Policy
+          </button>
+          <span className="text-muted-foreground">•</span>
+          <button
+            onClick={() => navigate("/terms")}
+            className="text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Terms
+          </button>
         </div>
       </div>
     </div>

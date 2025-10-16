@@ -6,6 +6,7 @@ import { GameModeSelector, GameMode } from "./GameModeSelector";
 import { PowerUp } from "./PowerUp";
 import { ParticleEffect } from "./ParticleEffect";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
+import { useAdMob } from "@/hooks/useAdMob";
 import { getGameSettings } from "@/pages/Settings";
 import { saveScore } from "@/pages/Scores";
 import { toast } from "sonner";
@@ -82,6 +83,7 @@ export const BalloonGame = () => {
   const [timeLeft, setTimeLeft] = useState(difficultySettings.timeAttackDuration);
   const [activePowerUps, setActivePowerUps] = useState<Record<string, boolean>>({});
   const { playPop, playPowerUp, playGameOver } = useSoundEffects();
+  const { showBannerAd, hideBannerAd, showInterstitialAd, showRewardAd } = useAdMob();
 
   const createBalloon = useCallback((): BalloonData => {
     const color = BALLOON_COLORS[Math.floor(Math.random() * BALLOON_COLORS.length)];
@@ -152,6 +154,7 @@ export const BalloonGame = () => {
           setGameOver(true);
           playGameOver();
           saveScore(settings.displayName, score, gameMode);
+          showInterstitialAd(); // Show ad on game over
           if (score > highScore) {
             setHighScore(score);
             localStorage.setItem("balloonHighScore", score.toString());
@@ -163,7 +166,7 @@ export const BalloonGame = () => {
         return newLives;
       });
     }
-  }, [gameMode, score, highScore, playGameOver, settings.displayName]);
+  }, [gameMode, score, highScore, playGameOver, settings.displayName, showInterstitialAd]);
 
   const handlePowerUpCollect = useCallback((id: string, type: string) => {
     setPowerUps((prev) => prev.filter((p) => p.id !== id));
@@ -254,10 +257,12 @@ export const BalloonGame = () => {
         if (prev <= 1) {
           setGameOver(true);
           playGameOver();
-          saveScore(settings.displayName, score, gameMode);
-          if (score > highScore) {
-            setHighScore(score);
-            localStorage.setItem("balloonHighScore", score.toString());
+          const currentScore = score;
+          const currentHighScore = highScore;
+          saveScore(settings.displayName, currentScore, gameMode || "classic");
+          if (currentScore > currentHighScore) {
+            setHighScore(currentScore);
+            localStorage.setItem("balloonHighScore", currentScore.toString());
             toast.success("New High Score!");
           } else {
             toast.info("Time's Up!");
@@ -269,7 +274,7 @@ export const BalloonGame = () => {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [gameMode, gameOver, isPaused, score, highScore, playGameOver, settings.displayName]);
+  }, [gameMode, gameOver, isPaused, playGameOver, settings.displayName]);
 
   // Keyboard controls
   useEffect(() => {
@@ -298,6 +303,9 @@ export const BalloonGame = () => {
         gameMode={gameMode}
         timeLeft={gameMode === "timeattack" ? timeLeft : undefined}
         activePowerUps={activePowerUps}
+        onPause={() => setIsPaused(true)}
+        onResume={() => setIsPaused(false)}
+        onQuit={handleRestart}
       />
 
       <div className="absolute inset-0">
@@ -337,7 +345,18 @@ export const BalloonGame = () => {
         ))}
       </div>
 
-      {gameOver && <GameOver score={score} highScore={highScore} onRestart={handleRestart} />}
+      {gameOver && (
+        <GameOver 
+          score={score} 
+          highScore={highScore} 
+          onRestart={handleRestart}
+          onExtraLife={() => {
+            setLives(1);
+            setGameOver(false);
+            toast.success("Continue playing!");
+          }}
+        />
+      )}
 
       {!gameOver && score === 0 && balloons.length === 0 && gameMode && (
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-center animate-slide-up">

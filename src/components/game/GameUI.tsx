@@ -1,4 +1,5 @@
-import { Heart, Clock, Zap, Star } from "lucide-react";
+import { Heart, Clock, Zap, Star, Pause, Play, Home } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { GameMode } from "./GameModeSelector";
 
@@ -11,9 +12,24 @@ interface GameUIProps {
   gameMode: GameMode;
   timeLeft?: number;
   activePowerUps: Record<string, boolean>;
+  onPause?: () => void;
+  onResume?: () => void;
+  onQuit?: () => void;
 }
 
-export const GameUI = ({ score, highScore, lives, maxLives, isPaused, gameMode, timeLeft, activePowerUps }: GameUIProps) => {
+export const GameUI = ({ 
+  score, 
+  highScore, 
+  lives, 
+  maxLives, 
+  isPaused, 
+  gameMode, 
+  timeLeft, 
+  activePowerUps,
+  onPause,
+  onResume,
+  onQuit
+}: GameUIProps) => {
   return (
     <div className="absolute top-0 left-0 right-0 p-4 md:p-6 z-10">
       <div className="max-w-7xl mx-auto">
@@ -25,6 +41,37 @@ export const GameUI = ({ score, highScore, lives, maxLives, isPaused, gameMode, 
             {highScore > 0 && (
               <div className="text-xs text-muted-foreground mt-1">High: {highScore}</div>
             )}
+          </div>
+
+          {/* Game Controls */}
+          <div className="flex items-center gap-2">
+            {!isPaused ? (
+              <Button
+                variant="secondary"
+                size="icon"
+                onClick={onPause}
+                className="rounded-xl shadow-lg"
+              >
+                <Pause className="w-5 h-5" />
+              </Button>
+            ) : (
+              <Button
+                variant="secondary"
+                size="icon"
+                onClick={onResume}
+                className="rounded-xl shadow-lg"
+              >
+                <Play className="w-5 h-5" />
+              </Button>
+            )}
+            <Button
+              variant="destructive"
+              size="icon"
+              onClick={onQuit}
+              className="rounded-xl shadow-lg"
+            >
+              <Home className="w-5 h-5" />
+            </Button>
           </div>
 
           {/* Time Attack Timer */}
