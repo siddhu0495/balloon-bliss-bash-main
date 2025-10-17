@@ -147,9 +147,27 @@ export const GameUI = ({
 
       {/* Pause overlay */}
       {isPaused && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl px-8 py-6 shadow-2xl animate-slide-up">
-            <div className="text-2xl font-bold text-foreground">Paused</div>
+        <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-50">
+          <div className="bg-white rounded-2xl px-8 py-6 shadow-2xl animate-slide-up space-y-4">
+            <div className="text-2xl font-bold text-foreground text-center mb-4">Paused</div>
+            <div className="flex flex-col gap-3 min-w-[200px]">
+              <Button
+                onClick={onResume}
+                variant="default"
+                className="w-full"
+              >
+                <Play className="w-4 h-4 mr-2" />
+                Continue
+              </Button>
+              <Button
+                onClick={onReplay}
+                variant="secondary"
+                className="w-full"
+              >
+                <RotateCcw className="w-4 h-4 mr-2" />
+                Restart
+              </Button>
+            </div>
           </div>
         </div>
       )}

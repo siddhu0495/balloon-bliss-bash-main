@@ -1,123 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Trophy, Trash2, TrendingUp, Target, Clock, Award } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Trophy, Trash2, TrendingUp, Target, Clock, Award } from "lucide-react";
 import { toast } from "sonner";
+import { getScores, getGameStats, ScoreEntry } from "@/pages/Scores";
 
-export interface ScoreEntry {
-  id: string;
-  playerName: string;
-  score: number;
-  mode: string;
-  date: string;
-}
-
-export interface GameStats {
-  totalGames: number;
-  totalScore: number;
-  totalPlayTime: number;
-  bestStreak: number;
-  currentStreak: number;
-  lastPlayDate: string;
-  achievements: string[];
-}
-
-export const saveScore = (playerName: string, score: number, mode: string) => {
-  const scores = getScores();
-  const newScore: ScoreEntry = {
-    id: `score-${Date.now()}`,
-    playerName,
-    score,
-    mode,
-    date: new Date().toISOString(),
-  };
-  scores.unshift(newScore);
-  // Keep only top 50 scores
-  const topScores = scores.slice(0, 50);
-  localStorage.setItem("gameScores", JSON.stringify(topScores));
-};
-
-export const getScores = (): ScoreEntry[] => {
-  const stored = localStorage.getItem("gameScores");
-  if (stored) {
-    try {
-      return JSON.parse(stored);
-    } catch {
-      return [];
-    }
-  }
-  return [];
-};
-
-export const saveGameStats = (score: number, mode: string, playTime: number) => {
-  const stats = getGameStats();
-  stats.totalGames += 1;
-  stats.totalScore += score;
-  stats.totalPlayTime += playTime;
-  
-  const today = new Date();
-  const todayStr = today.toDateString();
-  
-  if (stats.lastPlayDate === todayStr) {
-    // Same day, don't change streak
-  } else {
-    const lastDate = new Date(stats.lastPlayDate);
-    const diffTime = today.getTime() - lastDate.getTime();
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 1) {
-      // Consecutive day, increment streak
-      stats.currentStreak = (stats.currentStreak || 1) + 1;
-    } else if (diffDays > 1 || !stats.lastPlayDate) {
-      // Streak broken or first time, reset to 1
-      stats.currentStreak = 1;
-    }
-  }
-  
-  stats.lastPlayDate = todayStr;
-  stats.bestStreak = Math.max(stats.bestStreak, stats.currentStreak);
-  
-  // Achievement tracking
-  if (score >= 100 && !stats.achievements.includes("century")) {
-    stats.achievements.push("century");
-  }
-  if (score >= 500 && !stats.achievements.includes("high_roller")) {
-    stats.achievements.push("high_roller");
-  }
-  if (stats.totalGames >= 10 && !stats.achievements.includes("dedicated")) {
-    stats.achievements.push("dedicated");
-  }
-  if (stats.bestStreak >= 7 && !stats.achievements.includes("week_warrior")) {
-    stats.achievements.push("week_warrior");
-  }
-  
-  localStorage.setItem("gameStats", JSON.stringify(stats));
-};
-
-export const getGameStats = (): GameStats => {
-  const stored = localStorage.getItem("gameStats");
-  if (stored) {
-    try {
-      return JSON.parse(stored);
-    } catch {
-      return getDefaultStats();
-    }
-  }
-  return getDefaultStats();
-};
-
-const getDefaultStats = (): GameStats => ({
-  totalGames: 0,
-  totalScore: 0,
-  totalPlayTime: 0,
-  bestStreak: 0,
-  currentStreak: 0,
-  lastPlayDate: "",
-  achievements: [],
-});
-
-const Scores = () => {
-  const navigate = useNavigate();
+export const ScoresTab = () => {
   const [scores, setScores] = useState<ScoreEntry[]>(getScores());
   const [filter, setFilter] = useState<string>("all");
   const stats = getGameStats();
@@ -151,15 +38,6 @@ const Scores = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-[hsl(200,100%,85%)] to-[hsl(330,85%,80%)] p-6">
       <div className="max-w-4xl mx-auto">
-        <Button
-          variant="ghost"
-          onClick={() => navigate("/")}
-          className="mb-6"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Game
-        </Button>
-
         {/* Statistics Cards */}
         {stats.totalGames > 0 && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -288,5 +166,3 @@ const Scores = () => {
     </div>
   );
 };
-
-export default Scores;

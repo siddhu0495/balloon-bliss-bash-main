@@ -6,7 +6,7 @@ interface BalloonProps {
   color: string;
   type?: "normal" | "golden" | "bomb";
   onPop: (id: string, points?: number) => void;
-  onMiss: (id: string) => void;
+  onMiss: (id: string, type?: "normal" | "golden" | "bomb") => void;
   speed: number;
   xPosition: number;
   isPaused: boolean;
@@ -17,7 +17,7 @@ export const Balloon = ({ id, color, type = "normal", onPop, onMiss, speed, xPos
 
   const handleAnimationEnd = () => {
     if (!isPopped) {
-      onMiss(id);
+      onMiss(id, type);
     }
   };
 
