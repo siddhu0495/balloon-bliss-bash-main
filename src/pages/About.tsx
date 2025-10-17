@@ -100,12 +100,22 @@ export const About = () => {
               </p>
             </section>
 
+{/* 
+<p className="text-muted-foreground mb-4">
+                Reach out to us at: 
+                <Button onClick={() => window.open("https://docs.google.com/forms/d/e/1FAIpQLSclEEA53Yv9Gh7mpQjGbBnGvnjFCgRRH0-k_DlUBmgPkZy3yQ/viewform?usp=header", "_blank")}
+                variant="outline" */}
+                {/* // className="w-full col-span-2" */}
+                {/* >
+                Share Your Opinion
+                </Button>
+                {/* support@github.com */}
+              {/* </p>  */}
+              
+
             {/* Contact/Support */}
             <section className="bg-primary/10 rounded-2xl p-6 text-center">
-              <h2 className="text-xl font-bold text-foreground mb-3">Need Help?</h2>
-              <p className="text-muted-foreground mb-4">
-                Contact us at: support@github.com
-              </p>
+              <h2 className="text-xl font-bold text-foreground mb-3">Need Help?</h2>              
               <div className="flex justify-center gap-4">
                 <Button onClick={() => navigate("/guide")} variant="secondary">
                   User Guide
