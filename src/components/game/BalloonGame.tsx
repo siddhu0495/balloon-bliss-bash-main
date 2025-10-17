@@ -181,9 +181,11 @@ export const BalloonGame = () => {
     }
   }, [gameMode, highScore, playGameOver, settings.displayName, showInterstitialAd]);
 
-  const handleMiss = useCallback((id: string) => {
+  const handleMiss = useCallback((id: string, type?: "normal" | "golden" | "bomb") => {
     setBalloons((prev) => prev.filter((b) => b.id !== id));
-    if (gameMode === "endless") return; // In endless mode, don't deduct lives
+    
+    // Don't deduct lives for bombs (they already reduce score) or in endless mode
+    if (gameMode === "endless" || type === "bomb") return;
     
     setLives((prev) => {
       const newLives = prev - 1;
@@ -263,21 +265,19 @@ export const BalloonGame = () => {
     const playTime = Math.floor((Date.now() - gameStartTimeRef.current) / 1000);
     saveScore(settings.displayName, score, gameMode || "classic");
     saveGameStats(score, gameMode || "classic", playTime);
-    showInterstitialAd();
     toast.success("Score saved!", { id: "savescore" });
     setShowQuitDialog(false);
     handleRestart();
-  }, [score, gameMode, settings.displayName, handleRestart, showInterstitialAd]);
+  }, [score, gameMode, settings.displayName, handleRestart]);
 
   const handleConfirmReplay = useCallback(async () => {
     const playTime = Math.floor((Date.now() - gameStartTimeRef.current) / 1000);
     saveScore(settings.displayName, score, gameMode || "classic");
     saveGameStats(score, gameMode || "classic", playTime);
-    showInterstitialAd();
     toast.success("Score saved!", { id: "savescore" });
     setShowReplayDialog(false);
     handleRestart();
-  }, [score, gameMode, settings.displayName, handleRestart, showInterstitialAd]);
+  }, [score, gameMode, settings.displayName, handleRestart]);
 
   const handleModeSelect = useCallback((mode: GameMode) => {
     setGameMode(mode);
@@ -373,7 +373,7 @@ export const BalloonGame = () => {
             color={balloon.color}
             type={balloon.type}
             onPop={handlePop}
-            onMiss={handleMiss}
+            onMiss={(id) => handleMiss(id, balloon.type)}
             speed={balloon.speed}
             xPosition={balloon.xPosition}
             isPaused={isPaused}
@@ -439,8 +439,11 @@ export const BalloonGame = () => {
             }}>
               Quit Without Saving
             </AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmQuit}>
-              Save & Quit
+            <AlertDialogAction onClick={async () => {
+              await showInterstitialAd();
+              handleConfirmQuit();
+            }}>
+              Save & Quit (Watch Ad)
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -462,8 +465,11 @@ export const BalloonGame = () => {
             }}>
               Don't Save
             </AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmReplay}>
-              Save & Replay
+            <AlertDialogAction onClick={async () => {
+              await showInterstitialAd();
+              handleConfirmReplay();
+            }}>
+              Save & Replay (Watch Ad)
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

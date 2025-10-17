@@ -2,9 +2,24 @@ import { useEffect, useState } from 'react';
 import { AdMob, BannerAdOptions, BannerAdSize, BannerAdPosition, RewardAdOptions } from '@capacitor-community/admob';
 import { Capacitor } from '@capacitor/core';
 
+const AD_FREQUENCY_CAP_MS = 30000; // 30 seconds between ads
+const AD_FREQUENCY_KEY = 'lastAdShownTime';
+
 export const useAdMob = () => {
   const [isInitialized, setIsInitialized] = useState(false);
   const [isNative, setIsNative] = useState(false);
+
+  const canShowAd = (): boolean => {
+    const lastAdTime = localStorage.getItem(AD_FREQUENCY_KEY);
+    if (!lastAdTime) return true;
+    
+    const timeSinceLastAd = Date.now() - parseInt(lastAdTime);
+    return timeSinceLastAd >= AD_FREQUENCY_CAP_MS;
+  };
+
+  const recordAdShown = () => {
+    localStorage.setItem(AD_FREQUENCY_KEY, Date.now().toString());
+  };
 
   useEffect(() => {
     const initializeAdMob = async () => {
@@ -64,12 +79,18 @@ export const useAdMob = () => {
       return;
     }
 
+    if (!canShowAd()) {
+      console.log('Ad frequency cap reached, skipping ad');
+      return;
+    }
+
     try {
       await AdMob.prepareInterstitial({
         adId: 'ca-app-pub-3940256099942544/1033173712', // Test ad unit ID
         // adId: 'ca-app-pub-9276592567894109/6495340366', // Test ad unit ID
       });
       await AdMob.showInterstitial();
+      recordAdShown();
       console.log('Interstitial ad shown');
     } catch (error) {
       console.error('Failed to show interstitial ad:', error);
@@ -82,6 +103,11 @@ export const useAdMob = () => {
       return false;
     }
 
+    if (!canShowAd()) {
+      console.log('Ad frequency cap reached, skipping ad');
+      return false;
+    }
+
     try {
       const options: RewardAdOptions = {
         // adId: 'ca-app-pub-3940256099942544/5224354917', // Test ad unit ID
@@ -91,6 +117,7 @@ export const useAdMob = () => {
 
       await AdMob.prepareRewardVideoAd(options);
       const result = await AdMob.showRewardVideoAd();
+      recordAdShown();
       console.log('Reward ad shown, rewarded:', result);
       return true;
     } catch (error) {
