@@ -61,3 +61,9 @@ Go ahead and suggest a feature by opening an issue on the GitHub repository.
 ## More features are on the way!
 
 More features are on the way! Stay tuned for more updates.
+
+## Can I give feedback?
+
+Yes, you can!
+
+You can provide feedback and suggestions in the home page of the game by clicking on the 'Share Your Opinion' button. 

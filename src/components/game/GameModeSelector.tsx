@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Trophy, Clock, Infinity, Settings, BarChart3, Info, BookOpen } from "lucide-react";
+import { Trophy, Clock, Infinity, Settings, BarChart3, Info, BookOpen, MessageSquare } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export type GameMode = "classic" | "timeattack" | "endless";
@@ -79,6 +79,19 @@ export const GameModeSelector = ({ onSelectMode }: GameModeSelectorProps) => {
           >
             <BookOpen className="w-4 h-4 mr-2" />
             Guide
+          </Button>
+          <Button
+            // onClick={() => window.open("https://docs.google.com/forms/d/e/1FAIpQLSfxample/viewform", "_blank")}
+            // onClick={() => window.open("https://docs.google.com/forms/d/e/1FAIpQLSclEEA53Yv9Gh7mpQjGbBnGvnjFCgRRH0-k_DlUBmgPkZy3yQ/viewform?usp=sharing&ouid=100727135456678001109", "_blank")}
+            // onClick={() => window.open("https://forms.gle/PjnivKqdvcm7eCxd9", "_blank")}
+            onClick={() => window.open("https://docs.google.com/forms/d/e/1FAIpQLSclEEA53Yv9Gh7mpQjGbBnGvnjFCgRRH0-k_DlUBmgPkZy3yQ/viewform?usp=header", "_blank")}
+
+            variant="outline"
+            className="w-full col-span-2"
+          >
+            <MessageSquare className="w-4 h-4 mr-2" />
+            {/* Send Feedback */}
+            Share Your Opinion
           </Button>
         </div>
 

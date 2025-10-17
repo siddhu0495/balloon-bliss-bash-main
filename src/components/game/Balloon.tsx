@@ -9,9 +9,10 @@ interface BalloonProps {
   onMiss: (id: string) => void;
   speed: number;
   xPosition: number;
+  isPaused: boolean;
 }
 
-export const Balloon = ({ id, color, type = "normal", onPop, onMiss, speed, xPosition }: BalloonProps) => {
+export const Balloon = ({ id, color, type = "normal", onPop, onMiss, speed, xPosition, isPaused }: BalloonProps) => {
   const [isPopped, setIsPopped] = useState(false);
 
   const handleAnimationEnd = () => {
@@ -50,11 +51,11 @@ export const Balloon = ({ id, color, type = "normal", onPop, onMiss, speed, xPos
   return (
     <div
       id={id}
-      className="absolute cursor-pointer animate-float-up"
+      className="absolute cursor-pointer"
       style={{
         left: `${xPosition}%`,
         bottom: "-10%",
-        animationDuration: `${speed}s`,
+        animation: isPaused ? 'none' : `float-up ${speed}s linear forwards`,
       }}
       onClick={handleClick}
       onAnimationEnd={handleAnimationEnd}

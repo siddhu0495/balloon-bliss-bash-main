@@ -96,14 +96,14 @@ export const Terms = () => {
               </p>
             </section>
 
-            <section>
+            {/* <section>
               <h2 className="text-2xl font-bold mb-3">11. Contact Information</h2>
               <p className="text-muted-foreground">
                 For questions about these Terms & Conditions, contact us at:
                 <br />
                 Email: legal@github.com
               </p>
-            </section>
+            </section> */}
           </div>
         </div>
       </div>

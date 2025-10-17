@@ -1,4 +1,4 @@
-import { Heart, Clock, Zap, Star, Pause, Play, Home } from "lucide-react";
+import { Heart, Clock, Zap, Star, Pause, Play, Home, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { GameMode } from "./GameModeSelector";
@@ -14,6 +14,7 @@ interface GameUIProps {
   activePowerUps: Record<string, boolean>;
   onPause?: () => void;
   onResume?: () => void;
+  onReplay?: () => void;
   onQuit?: () => void;
 }
 
@@ -28,6 +29,7 @@ export const GameUI = ({
   activePowerUps,
   onPause,
   onResume,
+  onReplay,
   onQuit
 }: GameUIProps) => {
   return (
@@ -51,6 +53,7 @@ export const GameUI = ({
                 size="icon"
                 onClick={onPause}
                 className="rounded-xl shadow-lg"
+                title="Pause"
               >
                 <Pause className="w-5 h-5" />
               </Button>
@@ -60,15 +63,26 @@ export const GameUI = ({
                 size="icon"
                 onClick={onResume}
                 className="rounded-xl shadow-lg"
+                title="Resume"
               >
                 <Play className="w-5 h-5" />
               </Button>
             )}
             <Button
+              variant="default"
+              size="icon"
+              onClick={onReplay}
+              className="rounded-xl shadow-lg"
+              title="Replay"
+            >
+              <RotateCcw className="w-5 h-5" />
+            </Button>
+            <Button
               variant="destructive"
               size="icon"
               onClick={onQuit}
               className="rounded-xl shadow-lg"
+              title="Home"
             >
               <Home className="w-5 h-5" />
             </Button>

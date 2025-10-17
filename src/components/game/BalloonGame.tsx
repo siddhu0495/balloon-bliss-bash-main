@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Balloon } from "./Balloon";
 import { GameUI } from "./GameUI";
 import { GameOver } from "./GameOver";
@@ -8,8 +8,18 @@ import { ParticleEffect } from "./ParticleEffect";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
 import { useAdMob } from "@/hooks/useAdMob";
 import { getGameSettings } from "@/pages/Settings";
-import { saveScore } from "@/pages/Scores";
+import { saveScore, saveGameStats } from "@/pages/Scores";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface BalloonData {
   id: string;
@@ -82,6 +92,10 @@ export const BalloonGame = () => {
   const [spawnInterval, setSpawnInterval] = useState(difficultySettings.spawnInterval);
   const [timeLeft, setTimeLeft] = useState(difficultySettings.timeAttackDuration);
   const [activePowerUps, setActivePowerUps] = useState<Record<string, boolean>>({});
+  const [showQuitDialog, setShowQuitDialog] = useState(false);
+  const [showReplayDialog, setShowReplayDialog] = useState(false);
+  const gameStartTimeRef = useRef<number>(Date.now());
+  const gameOverProcessedRef = useRef(false);
   const { playPop, playPowerUp, playGameOver } = useSoundEffects();
   const { showBannerAd, hideBannerAd, showInterstitialAd, showRewardAd } = useAdMob();
 
@@ -145,28 +159,40 @@ export const BalloonGame = () => {
     }
   }, [score, balloons, activePowerUps.doublescore, playPop, settings.particlesEnabled]);
 
+  const handleGameOver = useCallback((finalScore: number) => {
+    if (gameOverProcessedRef.current) return;
+    gameOverProcessedRef.current = true;
+    
+    setGameOver(true);
+    playGameOver();
+    
+    const playTime = Math.floor((Date.now() - gameStartTimeRef.current) / 1000);
+    saveScore(settings.displayName, finalScore, gameMode || "classic");
+    saveGameStats(finalScore, gameMode || "classic", playTime);
+    
+    showInterstitialAd();
+    
+    if (finalScore > highScore) {
+      setHighScore(finalScore);
+      localStorage.setItem("balloonHighScore", finalScore.toString());
+      toast.success("New High Score!", { id: "highscore" });
+    } else {
+      toast.error("Game Over!", { id: "gameover" });
+    }
+  }, [gameMode, highScore, playGameOver, settings.displayName, showInterstitialAd]);
+
   const handleMiss = useCallback((id: string) => {
     setBalloons((prev) => prev.filter((b) => b.id !== id));
-    if (gameMode !== "endless") {
-      setLives((prev) => {
-        const newLives = prev - 1;
-        if (newLives <= 0) {
-          setGameOver(true);
-          playGameOver();
-          saveScore(settings.displayName, score, gameMode);
-          showInterstitialAd(); // Show ad on game over
-          if (score > highScore) {
-            setHighScore(score);
-            localStorage.setItem("balloonHighScore", score.toString());
-            toast.success("New High Score!");
-          } else {
-            toast.error("Game Over!");
-          }
-        }
-        return newLives;
-      });
-    }
-  }, [gameMode, score, highScore, playGameOver, settings.displayName, showInterstitialAd]);
+    if (gameMode === "endless") return; // In endless mode, don't deduct lives
+    
+    setLives((prev) => {
+      const newLives = prev - 1;
+      if (newLives <= 0) {
+        handleGameOver(score);
+      }
+      return newLives;
+    });
+  }, [gameMode, score, handleGameOver]);
 
   const handlePowerUpCollect = useCallback((id: string, type: string) => {
     setPowerUps((prev) => prev.filter((p) => p.id !== id));
@@ -213,8 +239,45 @@ export const BalloonGame = () => {
     setSpawnInterval(newDifficultySettings.spawnInterval);
     setTimeLeft(newDifficultySettings.timeAttackDuration);
     setActivePowerUps({});
-    toast.success("New Game Started!");
+    gameOverProcessedRef.current = false;
+    gameStartTimeRef.current = Date.now();
   }, [gameMode]);
+
+  const handleReplay = useCallback(() => {
+    if (!gameOver && score > 0) {
+      setShowReplayDialog(true);
+    } else {
+      handleRestart();
+    }
+  }, [gameOver, score, handleRestart]);
+
+  const handleQuit = useCallback(() => {
+    if (!gameOver && score > 0) {
+      setShowQuitDialog(true);
+    } else {
+      handleRestart();
+    }
+  }, [gameOver, score, handleRestart]);
+
+  const handleConfirmQuit = useCallback(async () => {
+    const playTime = Math.floor((Date.now() - gameStartTimeRef.current) / 1000);
+    saveScore(settings.displayName, score, gameMode || "classic");
+    saveGameStats(score, gameMode || "classic", playTime);
+    showInterstitialAd();
+    toast.success("Score saved!", { id: "savescore" });
+    setShowQuitDialog(false);
+    handleRestart();
+  }, [score, gameMode, settings.displayName, handleRestart, showInterstitialAd]);
+
+  const handleConfirmReplay = useCallback(async () => {
+    const playTime = Math.floor((Date.now() - gameStartTimeRef.current) / 1000);
+    saveScore(settings.displayName, score, gameMode || "classic");
+    saveGameStats(score, gameMode || "classic", playTime);
+    showInterstitialAd();
+    toast.success("Score saved!", { id: "savescore" });
+    setShowReplayDialog(false);
+    handleRestart();
+  }, [score, gameMode, settings.displayName, handleRestart, showInterstitialAd]);
 
   const handleModeSelect = useCallback((mode: GameMode) => {
     setGameMode(mode);
@@ -222,6 +285,8 @@ export const BalloonGame = () => {
     if (mode === "timeattack") {
       setTimeLeft(difficultySettings.timeAttackDuration);
     }
+    gameStartTimeRef.current = Date.now();
+    gameOverProcessedRef.current = false;
   }, [difficultySettings]);
 
   // Spawn balloons
@@ -256,16 +321,8 @@ export const BalloonGame = () => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(interval);
-          setGameOver(true);
-          playGameOver();
-          saveScore(settings.displayName, score, gameMode || "classic");
-          if (score > highScore) {
-            setHighScore(score);
-            localStorage.setItem("balloonHighScore", score.toString());
-            toast.success("New High Score!");
-          } else {
-            toast.info("Time's Up!");
-          }
+          handleGameOver(score);
+          toast.info("Time's Up!", { id: "timeout" });
           return 0;
         }
         return prev - 1;
@@ -273,7 +330,7 @@ export const BalloonGame = () => {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [gameMode, gameOver, isPaused, score, highScore, playGameOver, settings.displayName]);
+  }, [gameMode, gameOver, isPaused, score, handleGameOver]);
 
   // Keyboard controls
   useEffect(() => {
@@ -304,7 +361,8 @@ export const BalloonGame = () => {
         activePowerUps={activePowerUps}
         onPause={() => setIsPaused(true)}
         onResume={() => setIsPaused(false)}
-        onQuit={handleRestart}
+        onReplay={handleReplay}
+        onQuit={handleQuit}
       />
 
       <div className="absolute inset-0">
@@ -318,6 +376,7 @@ export const BalloonGame = () => {
             onMiss={handleMiss}
             speed={balloon.speed}
             xPosition={balloon.xPosition}
+            isPaused={isPaused}
           />
         ))}
         
@@ -330,6 +389,7 @@ export const BalloonGame = () => {
             onMiss={handlePowerUpMiss}
             speed={powerUp.speed}
             xPosition={powerUp.xPosition}
+            isPaused={isPaused}
           />
         ))}
 
@@ -349,13 +409,65 @@ export const BalloonGame = () => {
           score={score} 
           highScore={highScore} 
           onRestart={handleRestart}
-          onExtraLife={() => {
-            setLives(1);
-            setGameOver(false);
-            toast.success("Continue playing!");
+          onExtraLife={async () => {
+            const granted = await showRewardAd();
+            if (granted) {
+              setLives(1);
+              setGameOver(false);
+              gameOverProcessedRef.current = false;
+              toast.success("Continue playing!", { id: "continue" });
+            } else {
+              toast.error("Ad not available", { id: "adnotavailable" });
+            }
           }}
         />
       )}
+
+      <AlertDialog open={showQuitDialog} onOpenChange={setShowQuitDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Save Progress?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Would you like to save your current score ({score} points) before quitting?
+              You'll watch a short ad to save your progress.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setShowQuitDialog(false);
+              handleRestart();
+            }}>
+              Quit Without Saving
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmQuit}>
+              Save & Quit
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showReplayDialog} onOpenChange={setShowReplayDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Save Progress?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Would you like to save your current score ({score} points) before starting a new game?
+              You'll watch a short ad to save your progress.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setShowReplayDialog(false);
+              handleRestart();
+            }}>
+              Don't Save
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmReplay}>
+              Save & Replay
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {!gameOver && score === 0 && balloons.length === 0 && gameMode && (
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-center animate-slide-up">

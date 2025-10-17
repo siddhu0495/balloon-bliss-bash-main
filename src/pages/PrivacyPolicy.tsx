@@ -98,14 +98,14 @@ export const PrivacyPolicy = () => {
               </p>
             </section>
 
-            <section>
+            {/* <section>
               <h2 className="text-2xl font-bold mb-3">9. Contact Us</h2>
               <p className="text-muted-foreground">
                 If you have any questions about this Privacy Policy, please contact us at:
                 <br />
                 Email: support@github.com
               </p>
-            </section>
+            </section> */}
           </div>
         </div>
       </div>

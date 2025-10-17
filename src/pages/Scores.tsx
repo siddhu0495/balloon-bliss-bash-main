@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Trophy, Trash2 } from "lucide-react";
+import { ArrowLeft, Trophy, Trash2, TrendingUp, Target, Clock, Award } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -10,6 +10,16 @@ export interface ScoreEntry {
   score: number;
   mode: string;
   date: string;
+}
+
+export interface GameStats {
+  totalGames: number;
+  totalScore: number;
+  totalPlayTime: number;
+  bestStreak: number;
+  currentStreak: number;
+  lastPlayDate: string;
+  achievements: string[];
 }
 
 export const saveScore = (playerName: string, score: number, mode: string) => {
@@ -39,10 +49,65 @@ export const getScores = (): ScoreEntry[] => {
   return [];
 };
 
+export const saveGameStats = (score: number, mode: string, playTime: number) => {
+  const stats = getGameStats();
+  stats.totalGames += 1;
+  stats.totalScore += score;
+  stats.totalPlayTime += playTime;
+  
+  const today = new Date().toDateString();
+  if (stats.lastPlayDate === today) {
+    stats.currentStreak += 1;
+  } else {
+    stats.currentStreak = 1;
+  }
+  stats.lastPlayDate = today;
+  stats.bestStreak = Math.max(stats.bestStreak, stats.currentStreak);
+  
+  // Achievement tracking
+  if (score >= 100 && !stats.achievements.includes("century")) {
+    stats.achievements.push("century");
+  }
+  if (score >= 500 && !stats.achievements.includes("high_roller")) {
+    stats.achievements.push("high_roller");
+  }
+  if (stats.totalGames >= 10 && !stats.achievements.includes("dedicated")) {
+    stats.achievements.push("dedicated");
+  }
+  if (stats.bestStreak >= 7 && !stats.achievements.includes("week_warrior")) {
+    stats.achievements.push("week_warrior");
+  }
+  
+  localStorage.setItem("gameStats", JSON.stringify(stats));
+};
+
+export const getGameStats = (): GameStats => {
+  const stored = localStorage.getItem("gameStats");
+  if (stored) {
+    try {
+      return JSON.parse(stored);
+    } catch {
+      return getDefaultStats();
+    }
+  }
+  return getDefaultStats();
+};
+
+const getDefaultStats = (): GameStats => ({
+  totalGames: 0,
+  totalScore: 0,
+  totalPlayTime: 0,
+  bestStreak: 0,
+  currentStreak: 0,
+  lastPlayDate: "",
+  achievements: [],
+});
+
 const Scores = () => {
   const navigate = useNavigate();
   const [scores, setScores] = useState<ScoreEntry[]>(getScores());
   const [filter, setFilter] = useState<string>("all");
+  const stats = getGameStats();
 
   const filteredScores = filter === "all" 
     ? scores 
@@ -61,6 +126,15 @@ const Scores = () => {
     return date.toLocaleDateString() + " " + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
+  const formatTime = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    if (hours > 0) return `${hours}h ${minutes}m`;
+    return `${minutes}m`;
+  };
+
+  const averageScore = stats.totalGames > 0 ? Math.round(stats.totalScore / stats.totalGames) : 0;
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-[hsl(200,100%,85%)] to-[hsl(330,85%,80%)] p-6">
       <div className="max-w-4xl mx-auto">
@@ -72,6 +146,40 @@ const Scores = () => {
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Game
         </Button>
+
+        {/* Statistics Cards */}
+        {stats.totalGames > 0 && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-4 shadow-lg">
+              <div className="flex items-center gap-2 text-primary mb-2">
+                <TrendingUp className="w-5 h-5" />
+                <span className="text-sm font-medium">Avg Score</span>
+              </div>
+              <div className="text-2xl font-bold">{averageScore}</div>
+            </div>
+            <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-4 shadow-lg">
+              <div className="flex items-center gap-2 text-secondary mb-2">
+                <Target className="w-5 h-5" />
+                <span className="text-sm font-medium">Best Streak</span>
+              </div>
+              <div className="text-2xl font-bold">{stats.bestStreak} days</div>
+            </div>
+            <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-4 shadow-lg">
+              <div className="flex items-center gap-2 text-accent mb-2">
+                <Clock className="w-5 h-5" />
+                <span className="text-sm font-medium">Play Time</span>
+              </div>
+              <div className="text-2xl font-bold">{formatTime(stats.totalPlayTime)}</div>
+            </div>
+            <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-4 shadow-lg">
+              <div className="flex items-center gap-2 text-primary mb-2">
+                <Award className="w-5 h-5" />
+                <span className="text-sm font-medium">Achievements</span>
+              </div>
+              <div className="text-2xl font-bold">{stats.achievements.length}</div>
+            </div>
+          </div>
+        )}
 
         <div className="bg-white/95 backdrop-blur-sm rounded-3xl p-8 shadow-2xl">
           <div className="flex items-center justify-between mb-6">
